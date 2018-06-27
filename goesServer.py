@@ -4,7 +4,16 @@ from http.server  import HTTPServer, SimpleHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
 import os, time, urllib
-from http import HTTPStatus
+
+try:  # Python 3.5+
+    from http import HTTPStatus as StatusCodes
+except ImportError:
+    try:  # Python 3
+        from http import client as StatusCodes
+    except ImportError:  # Python 2
+        import httplib as StatusCodes
+
+#from http import HTTPStatus
 from email.utils import parsedate
 
 class ThreadingServer(ThreadingMixIn, HTTPServer):
@@ -63,7 +72,7 @@ class SimpleCacheHTTPRequestHandler(SimpleHTTPRequestHandler):
             f.close()
             raise
 
-server_address = ('', 80)
+server_address = ('', 8888)
 SimpleCacheHTTPRequestHandler.extensions_map['webm'] = 'video/webm'
 httpd = ThreadingServer(server_address, SimpleCacheHTTPRequestHandler)
 print('Server is running')
