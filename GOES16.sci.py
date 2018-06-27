@@ -20,7 +20,7 @@ import datetime
 
 # Path to store tempfiles to
 TEMP = '/tmp'
-STORAGE = '/home/bnitkin/goesr'
+STORAGE = '/home/shane/goesr'
 # URL to fetch directory listings from
 #        https://www.googleapis.com/storage/v1/b/gcp-public-data-goes-16/o?prefix=ABI-L2-CMIPF/    2018/070/21/OR_ABI-L2-CMIPF-M3C01
 DIR_LIST = 'https://www.googleapis.com/storage/v1/b/gcp-public-data-goes-16/o?prefix=ABI-L2-CMIPF/{date:%Y/%j/%H}/OR_ABI-L2-CMIPF-M3C{channel:02}'
@@ -106,7 +106,7 @@ def getLatestData(channel, obj, last=''):
             print(' - Converting netcdf4 to netcdf3', timer.lap())
             with NamedTemporaryFile(delete=False) as scratchNC:
                 # Use nccopy to convert, then copy the netcdf3 file over the existing path.
-                subprocess.check_call(('nccopy', '-3', filename, scratchNC.name))
+                subprocess.check_call(('nccopy', '-k', '1',  filename, scratchNC.name))
                 print(' - Moving back to original location', timer.lap())
                 os.remove(                filename)
                 os.rename(scratchNC.name, filename)
