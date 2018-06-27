@@ -4,10 +4,12 @@ import os, sys, glob, subprocess
 from datetime import datetime
 
 #sys.argv[2]
+userhome = os.path.expanduser('~')          
+USER = os.path.split(userhome)[-1]  
 
 FRAMES = 15*24*2 # 2 days of data
-SRC =  '/home/bnitkin/goesr/truecolor-thumb-*.jpg'
-DEST = '/home/bnitkin/goesr/video-{}.webm'
+SRC =  '/home/' + USER + '/goesr/truecolor-thumb-*.jpg'
+DEST = '/home/' + USER + '/goesr/video-{}.webm'
 FRAMES = {'day':     24*4-1,
           'two-day': 24*4*2-1,
           'week':    24*4*7-1,
@@ -44,40 +46,22 @@ def main():
 
     print('Encoding the following', len(files), 'files:', files)
 
-    tmpfile =  '/tmp/video-{}.webm'.format(sys.argv[1])
-    if os.path.isfile(tmpfile):
-        print("ERROR: output file {} already exists. Aborting.".format(tmpfile))
-        exit(1)
-    open(tmpfile, 'w').close() # Touch tmpfile (ffmpeg takes a while to flush its output)
-
     ffmpeg = subprocess.Popen(('ffmpeg',
         '-framerate', RATE[sys.argv[1]], # Framerate from RATE
         '-y',                          # Overwrite output path
         '-f', 'image2pipe', '-i', '-', # Read images from stdin
-        '-pix_fmt', 'yuv420p',         # Force older pixel format to make Firefox happy.
-        '-c:v', 'libvpx-vp9', '-an',
-# Settings to make it go a litte faster, but at a quality tradeoff.
-#        '-cpu-used', '2',
-#        '-speed', '3',
-        '-crf', '31', '-b:v', '0',     # Constant quality (31 is suggested for 1080p)
-        tmpfile,
-# Uncomment the below to add a mp4 output. Should work on Safari, but doesn't...
-#        '-c:v', 'h264', '-c:a', 'aac',
-#        '-pix_fmt', 'yuv420p',
-#        '-preset', 'veryfast',
-#        '-crf', '30', '-b:v', '0',     # Constant quality (18-24 is suggested for mp4)
-#        tmpfile.replace('webm', 'mp4')
-        ), stdin=subprocess.PIPE)      # Write to a tempfile
+        '-c:v', 'libx264', '-c:a', 'aac',
+        '-pix_fmt', 'yuv420p',
+	'-qscale', '0',
+	'-y',
+	'-movflags', 'faststart',
+	DEST.format(sys.argv[1]).replace('webm', 'mp4') 
+       ), stdin=subprocess.PIPE)      # Write to a tempfile
 
     for path in files:
         with open(path, 'rb') as image:
             ffmpeg.stdin.write(image.read())
     ffmpeg.stdin.close()
     ffmpeg.wait()
-
-    # Finally, move to the output area. 
-    # This ensures that the final move is atomic, and reduces web-frontend screwups.
-    os.rename('/tmp/video-{}.webm'.format(sys.argv[1]), DEST.format(sys.argv[1]))
-#    os.rename('/tmp/video-{}.mp4'.format(sys.argv[1]), DEST.format(sys.argv[1]).replace('webm', 'mp4'))
 
 main()
